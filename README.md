@@ -9,14 +9,14 @@ You will submit three deliverables:
 Important: Implementation may be assisted by generative AI tools. Because of this, grading emphasizes the quality of the design and the quality of the validation.
 
 
-1) How to run:
+How to run:
     - java Blockchain.java
     - java Blockchain.java test (validation tests)
     
-2) Demo Script:
+Demo Script:
     - java Blockchain.java demo (same as original)
-
-3) Assumptions and Limitations:
+    
+Assumptions and Limitations:
     - Requires java 9+
     - Uses SHA-256; User must be registered
     - Genesis block (1st block) has a nonce of 0
