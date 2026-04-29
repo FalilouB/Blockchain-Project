@@ -1,6 +1,5 @@
 /**
  * Blockchain.java
- *
  * Single-file blockchain implementation in Java.
  * Contains all classes as static nested classes:
  *   - CryptoUtils       (key generation, signing, verification, SHA-256)

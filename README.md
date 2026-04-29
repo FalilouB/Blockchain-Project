@@ -1,7 +1,13 @@
 # Blockchain-Project
+<<<<<<< HEAD
 How to run:
 - java Blockchain.java
 - java Blockchain.java test (validation tests)
+=======
+1) How to run:
+    - java Blockchain.java
+    - java Blockchain.java test (validation tests)
+>>>>>>> 830b17a (Individual tests)
     
 Demo Script:
 - java Blockchain.java demo (same as original)
