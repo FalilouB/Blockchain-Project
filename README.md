@@ -6,6 +6,7 @@ You will submit three deliverables:
 1) Design document
 2) Implementation (code + README)
 3) Validation report (tests + evidence + design-to-code traceability)
+
 Important: Implementation may be assisted by generative AI tools. Because of this, grading emphasizes the quality of the design and the quality of the validation.
 
 
