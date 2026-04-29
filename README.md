@@ -11,15 +11,15 @@ Important: Implementation may be assisted by generative AI tools. Because of thi
 
 
 How to run:
-    - java Blockchain.java
-    - java Blockchain.java test (validation tests)
+- java Blockchain.java
+- java Blockchain.java test (validation tests)
     
 Demo Script:
-    - java Blockchain.java demo (same as original)
+- java Blockchain.java demo (same as original)
     
 Assumptions and Limitations:
-    - Requires java 9+
-    - Uses SHA-256; User must be registered
-    - Genesis block (1st block) has a nonce of 0
-    - Fork resolution uses longest valid chain
-    - All classes are static nested classes inside Blockchain.java
+- Requires java 9+
+- Uses SHA-256; User must be registered
+- Genesis block (1st block) has a nonce of 0
+- Fork resolution uses longest valid chain
+- All classes are static nested classes inside Blockchain.java
