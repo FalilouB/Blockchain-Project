@@ -11,4 +11,4 @@
     - Uses SHA-256; User must be registered
     - Genesis block (1st block) has a nonce of 0
     - Fork resolution uses longest valid chain
-    - All classes are static nested classes inside Blockchain.java
+    - All classes are static nested classes inside Blockchain.java 
