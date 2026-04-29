@@ -36,6 +36,13 @@ public class Blockchain {
             case "test":
                 BlockchainTests.runAll();
                 break;
+            case "1": BlockchainTests.test1(); break;
+            case "2": BlockchainTests.test2(); break;
+            case "3": BlockchainTests.test3(); break;
+            case "4": BlockchainTests.test4(); break;
+            case "5": BlockchainTests.test5(); break;
+            case "6": BlockchainTests.test6(); break;
+            case "7": BlockchainTests.test7(); break;
             default:
                 runDemo();
         }
