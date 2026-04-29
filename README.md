@@ -1,15 +1,4 @@
 # Blockchain-Project
-In this project you will create a small blockchain system. The goal is to demonstrate understanding of core blockchain concepts (hash-linked blocks, transactions, validation, and a simple consensus rule) and to practice security engineering discipline: designing first, implementing to spec, and validating that the implementation matches the design.
-
-You will submit three deliverables:
-
-1) Design document
-2) Implementation (code + README)
-3) Validation report (tests + evidence + design-to-code traceability)
-
-Important: Implementation may be assisted by generative AI tools. Because of this, grading emphasizes the quality of the design and the quality of the validation.
-
-
 How to run:
 - java Blockchain.java
 - java Blockchain.java test (validation tests)
