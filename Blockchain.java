@@ -1,5 +1,6 @@
 /**
  * Blockchain.java
+ *
  * Single-file blockchain implementation in Java.
  * Contains all classes as static nested classes:
  *   - CryptoUtils       (key generation, signing, verification, SHA-256)
@@ -222,35 +223,26 @@ public class Blockchain {
     }
 
     // =========================================================================
-    // Algorithm 1 — Transaction Verification
+    // Transaction Verification
     // =========================================================================
 
-    /**
-     * Algorithm: Transaction Verification
-     * ─────────────────────────────────────
-     * 1. Check required fields are present and non-empty.
-     * 2. Verify amount >= 0.
-     * 3. Look up sender's public key in publicKeyStore {address → PublicKey}.
-     * 4. Verify RSA-PSS signature over tx.txId bytes.
-     * 5. Return true only if all checks pass.
-     */
     public static boolean verifyTransaction(Transaction tx,
                                             Map<String, PublicKey> publicKeyStore) {
-        // Step 1 — required fields
+        // required fields
         if (tx.txId == null || tx.txId.isEmpty()
          || tx.senderId == null || tx.senderId.isEmpty()
          || tx.recipientId == null || tx.recipientId.isEmpty()
          || tx.signature == null || tx.signature.isEmpty()) {
             return false;
         }
-        // Step 2 — non-negative amount
+        // non-negative amount
         if (tx.amount < 0) return false;
 
-        // Step 3 — sender known
+        // sender known
         PublicKey pub = publicKeyStore.get(tx.senderId);
         if (pub == null) return false;
 
-        // Step 4 — signature
+        // signature check
         return CryptoUtils.verifySignature(pub, tx.txId, tx.signature);
     }
 
@@ -287,13 +279,6 @@ public class Blockchain {
             this.blockHash    = computeHash();
         }
 
-        /**
-         * Hash computation (exact fields, pipe-separated):
-         *   SHA-256( index|timestamp|txs_json|prevHash|nonce )
-         *
-         * txs_json = JSON array of transaction maps, sorted keys,
-         *            matching Python's json.dumps([tx.to_dict()…], sort_keys=True).
-         */
         public String computeHash() {
             StringBuilder txsJson = new StringBuilder("[");
             for (int i = 0; i < transactions.size(); i++) {
@@ -320,19 +305,9 @@ public class Blockchain {
     }
 
     // =========================================================================
-    // Algorithm 2 — Block Creation (PoW Mining)
+    // Block Creation (PoW Mining)
     // =========================================================================
 
-    /**
-     * Algorithm: Block Creation (PoW Mining)
-     * ───────────────────────────────────────
-     * 1. Assemble candidate block with nonce = 0.
-     * 2. Compute hash.
-     * 3. While hash does not start with POW_DIFFICULTY leading zeros:
-     *      increment nonce, recompute hash.
-     * 4. Store final hash in blockHash.
-     * 5. Return block.
-     */
     public static Block createBlock(int index, List<Transaction> transactions,
                                     String prevHash) {
         Block block = new Block(index, transactions, prevHash);
@@ -345,36 +320,25 @@ public class Blockchain {
     }
 
     // =========================================================================
-    // Algorithm 3 — Block Verification
+    // Block Verification
     // =========================================================================
 
-    /**
-     * Algorithm: Block Verification
-     * ──────────────────────────────
-     * 1. Recompute block's hash; confirm it matches stored blockHash.
-     * 2. Confirm hash satisfies PoW (starts with POW_DIFFICULTY zeros).
-     * 3. Verify prevHash links correctly to prevBlock.blockHash
-     *    (skip for genesis block where prevBlock is null).
-     * 4. For each transaction in block: run verifyTransaction.
-     * 5. Return true only if all checks pass.
-     */
     public static boolean verifyBlock(Block block, Block prevBlock,
                                       Map<String, PublicKey> publicKeyStore) {
-        // Step 1 — hash integrity
+        // hash integrity
         if (!block.recomputeHash().equals(block.blockHash)) return false;
 
-        // Step 2 — PoW
+        // PoW check
         if (!block.blockHash.startsWith("0".repeat(Block.POW_DIFFICULTY))) return false;
 
-        // Step 3 — chain link
+        // chain link
         if (prevBlock == null) {
-            // Genesis: prevHash must be all zeros
             if (!block.prevHash.equals(Block.GENESIS_PREV)) return false;
         } else {
             if (!block.prevHash.equals(prevBlock.blockHash)) return false;
         }
 
-        // Step 4 — transactions
+        // all transactions valid
         for (Transaction tx : block.transactions) {
             if (!verifyTransaction(tx, publicKeyStore)) return false;
         }
@@ -382,7 +346,7 @@ public class Blockchain {
     }
 
     // =========================================================================
-    // Blockchain class  (Algorithm 4 — Chain Verification)
+    // Blockchain
     // =========================================================================
 
     public static final class BlockchainChain {
@@ -423,14 +387,6 @@ public class Blockchain {
             return true;
         }
 
-        /**
-         * Algorithm: Chain Verification
-         * ──────────────────────────────
-         * 1. Check genesis block exists and has prevHash = "0"*64.
-         * 2. For i = 1 to chain.size()-1:
-         *      verifyBlock(chain[i], chain[i-1], publicKeyStore)
-         * 3. Return true only if every block passes.
-         */
         public boolean verifyChain() {
             if (chain.isEmpty()) return false;
             // Genesis check
@@ -460,18 +416,9 @@ public class Blockchain {
     }
 
     // =========================================================================
-    // Algorithm 5 — Fork Resolution (Longest Valid Chain)
+    // Fork Resolution
     // =========================================================================
 
-    /**
-     * Algorithm: Fork Resolution (Longest Valid Chain)
-     * ─────────────────────────────────────────────────
-     * 1. Verify chainA; record length if valid.
-     * 2. Verify chainB; record length if valid.
-     * 3. Return the longer valid chain.
-     *    If lengths are equal, prefer chainA (tie-break: first seen).
-     *    If a chain is invalid, reject it regardless of length.
-     */
     public static BlockchainChain resolveFork(BlockchainChain chainA,
                                               BlockchainChain chainB) {
         boolean aValid = chainA.verifyChain();
@@ -611,8 +558,6 @@ public class Blockchain {
         }
 
         static void result(boolean passed, String description) {
-            String tag = passed ? "✅ PASS" : "❌ FAIL";
-            System.out.printf("  %s  %s%n", tag, description);
             if (passed) BlockchainTests.passed++;
             else        BlockchainTests.failed++;
         }
@@ -624,12 +569,16 @@ public class Blockchain {
             header(1, "Valid chain passes verification");
 
             BlockchainChain bc = makeFreshChain();
-            Transaction tx = makeSignedTx(aliceAddr, aliceKP.getPrivate(), bobAddr, 30.0);
-            mineAndAppend(bc, List.of(tx));
+            Block b1 = mineAndAppend(bc, List.of(makeSignedTx(aliceAddr, aliceKP.getPrivate(), bobAddr, 30.0)));
 
+            System.out.println("\n  Built a 2-block chain with a signed transaction:");
+            System.out.printf("    [Genesis] --> [Block #1 | Alice->Bob amt=30.0 | hash=%s...]%n",
+                b1.blockHash.substring(0, 8));
+            System.out.println("\n  Running verifyChain()...");
             boolean valid = bc.verifyChain();
-            result(valid, "verifyChain() returned " + valid + " for a properly built 2-block chain");
-            System.out.println("  Chain length: " + bc.size());
+            System.out.println("  verifyChain() = " + valid);
+            System.out.println("  Chain length  = " + bc.size());
+            result(valid, "");
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -639,16 +588,26 @@ public class Blockchain {
             header(2, "Tampering is detected (modify transaction amount in old block)");
 
             BlockchainChain bc = makeFreshChain();
-            mineAndAppend(bc, List.of(makeSignedTx(aliceAddr, aliceKP.getPrivate(), bobAddr, 10.0)));
-            mineAndAppend(bc, List.of(makeSignedTx(bobAddr, bobKP.getPrivate(), carolAddr, 5.0)));
+            Block b1 = mineAndAppend(bc, List.of(makeSignedTx(aliceAddr, aliceKP.getPrivate(), bobAddr, 10.0)));
+            Block b2 = mineAndAppend(bc, List.of(makeSignedTx(bobAddr, bobKP.getPrivate(), carolAddr, 5.0)));
 
-            System.out.println("  Chain valid before tampering: " + bc.verifyChain());
+            System.out.println("\n  Chain before tampering:");
+            System.out.printf("    [Genesis] --> [Block #1 | Alice->Bob amt=10.0 | hash=%s...] --> [Block #2 | Bob->Carol amt=5.0 | hash=%s...]%n",
+                b1.blockHash.substring(0, 8), b2.blockHash.substring(0, 8));
+            System.out.println("  verifyChain() = " + bc.verifyChain());
 
-            // Tamper: mutate amount in block 1's first transaction
+            System.out.println("\n  Tampering: changing Block #1 transaction amount from 10.0 → 9999.0...");
             bc.chain.get(1).transactions.get(0).amount = 9999.0;
 
+            System.out.println("\n  Chain after tampering:");
+            System.out.printf("    [Genesis] --> [Block #1 | Alice->Bob amt=9999.0 (TAMPERED) | hash=%s...] --> [Block #2 | hash=%s...]%n",
+                b1.blockHash.substring(0, 8), b2.blockHash.substring(0, 8));
+            System.out.println("  Block #1 stored hash no longer matches recomputed hash → chain invalid");
+            System.out.println("  verifyChain() = " + bc.verifyChain());
+
             boolean tamperDetected = !bc.verifyChain();
-            result(tamperDetected, "Tampered chain flagged as invalid: " + !bc.verifyChain());
+            System.out.println("  Tamper detected (chain invalid): " + tamperDetected);
+            result(tamperDetected, "");
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -659,21 +618,29 @@ public class Blockchain {
 
             // Case A: no signature
             Transaction txUnsigned = new Transaction(aliceAddr, bobAddr, 5.0);
-            // intentionally not signing
             boolean unsignedOk = verifyTransaction(txUnsigned, pubStore);
-            result(!unsignedOk, "Unsigned tx rejected: " + !unsignedOk);
+            System.out.println("\n  Case A — Transaction with no signature:");
+            System.out.printf("    Alice->Bob  amt=5.0  signature=(empty)%n");
+            System.out.println("  verifyTransaction() = " + unsignedOk + "  ← rejected, signature missing");
+            result(!unsignedOk, "");
 
             // Case B: signed by wrong key (Carol signs as Alice)
             Transaction txForged = new Transaction(aliceAddr, bobAddr, 5.0);
-            txForged.sign(carolKP.getPrivate());   // wrong key!
+            txForged.sign(carolKP.getPrivate());
             boolean forgedOk = verifyTransaction(txForged, pubStore);
-            result(!forgedOk, "Forged-signature tx rejected: " + !forgedOk);
+            System.out.println("\n  Case B — Transaction signed by wrong key (Carol signs as Alice):");
+            System.out.printf("    sender=Alice  signed_by=Carol  amt=5.0%n");
+            System.out.println("  verifyTransaction() = " + forgedOk + "  ← rejected, signature does not match Alice's public key");
+            result(!forgedOk, "");
 
-            // Case C: valid signature accepted
+            // Case C: valid signature
             Transaction txGood = new Transaction(aliceAddr, bobAddr, 5.0);
             txGood.sign(aliceKP.getPrivate());
             boolean goodOk = verifyTransaction(txGood, pubStore);
-            result(goodOk, "Legitimately signed tx accepted: " + goodOk);
+            System.out.println("\n  Case C — Transaction correctly signed by Alice:");
+            System.out.printf("    sender=Alice  signed_by=Alice  amt=5.0%n");
+            System.out.println("  verifyTransaction() = " + goodOk + "  ← accepted");
+            result(goodOk, "");
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -685,8 +652,7 @@ public class Blockchain {
             BlockchainChain bc = makeFreshChain();
             Transaction tx = makeSignedTx(aliceAddr, aliceKP.getPrivate(), carolAddr, 8.0);
 
-            // Craft a block with wrong prevHash but valid PoW
-            String badPrev = "deadbeef".repeat(8);   // 64 hex chars, wrong
+            String badPrev = "deadbeef".repeat(8);
             Block badBlock = new Block(1, List.of(tx), badPrev);
             String target = "0".repeat(Block.POW_DIFFICULTY);
             while (!badBlock.blockHash.startsWith(target)) {
@@ -694,8 +660,15 @@ public class Blockchain {
                 badBlock.blockHash = badBlock.recomputeHash();
             }
 
+            System.out.println("\n  Attempting to add Block #1 with a fabricated prevHash:");
+            System.out.printf("    Expected prevHash : %s...%n", bc.tip().blockHash.substring(0, 8));
+            System.out.printf("    Block's prevHash  : %s...  ← WRONG%n", badPrev.substring(0, 8));
+            System.out.printf("    Block hash (PoW)  : %s...  ← valid PoW, but link is broken%n", badBlock.blockHash.substring(0, 8));
+
             boolean accepted = bc.addBlock(badBlock);
-            result(!accepted, "Block with wrong prevHash was rejected: " + !accepted);
+            System.out.println("\n  addBlock() result: " + (accepted ? "ACCEPTED" : "REJECTED") + "  ← prevHash does not match genesis hash");
+            System.out.println("  Chain length stays: " + bc.size() + "  (block was not added)");
+            result(!accepted, "");
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -715,6 +688,10 @@ public class Blockchain {
             nodeA.submitBlock(b1);
             nodeB.submitBlock(b1);
 
+            System.out.println("\n  Both nodes share Block #1:");
+            System.out.printf("    NodeA: [Genesis] --> [Block #1 | hash=%s...]%n", b1.blockHash.substring(0, 8));
+            System.out.printf("    NodeB: [Genesis] --> [Block #1 | hash=%s...]%n", b1.blockHash.substring(0, 8));
+
             // Both diverge at block 2
             Block b2a = createBlock(2,
                 List.of(makeSignedTx(bobAddr, bobKP.getPrivate(), carolAddr, 3.0)),
@@ -726,18 +703,34 @@ public class Blockchain {
                 b1.blockHash);
             nodeB.submitBlock(b2b);
 
+            System.out.println("\n  Fork occurs at Block #2 — each node mines a different block:");
+            System.out.printf("    NodeA: [Genesis] --> [Block #1] --> [Block #2A | hash=%s...]%n", b2a.blockHash.substring(0, 8));
+            System.out.printf("    NodeB: [Genesis] --> [Block #1] --> [Block #2B | hash=%s...]  ← FORK%n", b2b.blockHash.substring(0, 8));
+
             // Node A mines one extra block → longer
             Block b3a = createBlock(3,
                 List.of(makeSignedTx(aliceAddr, aliceKP.getPrivate(), carolAddr, 2.0)),
                 b2a.blockHash);
             nodeA.submitBlock(b3a);
 
+            System.out.println("\n  NodeA mines Block #3 — NodeA now has the longer chain:");
+            System.out.printf("    NodeA: [Genesis] --> [Block #1] --> [Block #2A] --> [Block #3 | hash=%s...]  (length 4)%n", b3a.blockHash.substring(0, 8));
+            System.out.printf("    NodeB: [Genesis] --> [Block #1] --> [Block #2B]  (length 3)%n");
+
+            System.out.println("\n  Resolving fork — longest valid chain wins...");
             int lenBefore = nodeB.blockchain.size();
             nodeB.syncWith(nodeA);
             int lenAfter = nodeB.blockchain.size();
 
+            System.out.println("\n  After sync:");
+            System.out.printf("    NodeA: [Genesis] --> [Block #1] --> [Block #2A] --> [Block #3]  (length %d)%n", nodeA.blockchain.size());
+            System.out.printf("    NodeB: [Genesis] --> [Block #1] --> [Block #2A] --> [Block #3]  (length %d) ← adopted NodeA's chain%n", nodeB.blockchain.size());
+
+            System.out.println();
             boolean adoptedLonger = (lenAfter == nodeA.blockchain.size() && lenAfter > lenBefore);
-            result(adoptedLonger, "Node B adopted longer chain: " + lenBefore + " → " + lenAfter + " blocks");
+            System.out.println("  NodeB chain length before sync : " + lenBefore);
+            System.out.println("  NodeB chain length after sync  : " + lenAfter);
+            result(adoptedLonger, "");
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -748,14 +741,24 @@ public class Blockchain {
 
             BlockchainChain bc = makeFreshChain();
             Transaction tx6 = makeSignedTx(aliceAddr, aliceKP.getPrivate(), bobAddr, 25.0);
-            mineAndAppend(bc, List.of(tx6));
+            Block b1 = mineAndAppend(bc, List.of(tx6));
 
-            // Replay: same txId
+            System.out.println("\n  Transaction submitted and accepted in Block #1:");
+            System.out.printf("    txId : %s...%n", tx6.txId.substring(0, 16));
+            System.out.printf("    Alice -> Bob  amt=25.0%n");
+            System.out.printf("    Chain: [Genesis] --> [Block #1 | txId=%s... ACCEPTED]%n", tx6.txId.substring(0, 8));
+
+            System.out.println("\n  Attempting to replay the same transaction in Block #2...");
             Transaction replay = tx6.shallowCopy();
             Block replayBlock = createBlock(bc.size(), List.of(replay), bc.tip().blockHash);
             boolean accepted = bc.addBlock(replayBlock);
 
-            result(!accepted, "Replay tx (duplicate txId) was rejected: " + !accepted);
+            System.out.printf("    txId : %s... (SAME as before)%n", replay.txId.substring(0, 16));
+            System.out.printf("    addBlock() result: %s  ← txId already in seenTxIds set%n", accepted ? "ACCEPTED" : "REJECTED");
+            System.out.printf("    Chain stays: [Genesis] --> [Block #1]  (Block #2 was not added)%n");
+
+            System.out.println();
+            result(!accepted, "");
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -796,15 +799,29 @@ public class Blockchain {
                 by1.blockHash);
             nodeY.submitBlock(by2);
 
-            System.out.printf("  Before sync — NodeX: %d blocks, NodeY: %d blocks%n",
-                nodeX.blockchain.size(), nodeY.blockchain.size());
+            System.out.println("\n  Both nodes mined independently (no communication yet):");
+            System.out.printf("    NodeX: [Genesis] --> [Block #1 | hash=%s...] --> [Block #2 | hash=%s...] --> [Block #3 | hash=%s...]  (length %d)%n",
+                bx1.blockHash.substring(0, 8), bx2.blockHash.substring(0, 8), bx3.blockHash.substring(0, 8), nodeX.blockchain.size());
+            System.out.printf("    NodeY: [Genesis] --> [Block #1 | hash=%s...] --> [Block #2 | hash=%s...]  (length %d)%n",
+                by1.blockHash.substring(0, 8), by2.blockHash.substring(0, 8), nodeY.blockchain.size());
 
+            System.out.println("\n  NodeY syncing with NodeX — longest valid chain wins...");
             nodeY.syncWith(nodeX);
 
+            System.out.println("\n  After sync:");
+            System.out.printf("    NodeX: [Genesis] --> [Block #1] --> [Block #2] --> [Block #3]  tip=%s...%n", nodeX.blockchain.tip().blockHash.substring(0, 8));
+            System.out.printf("    NodeY: [Genesis] --> [Block #1] --> [Block #2] --> [Block #3]  tip=%s...  ← adopted NodeX's chain%n", nodeY.blockchain.tip().blockHash.substring(0, 8));
+            System.out.println("  verifyChain() on synced NodeY = " + nodeY.blockchain.verifyChain());
+
+            System.out.println();
             boolean tipsMatch = nodeY.blockchain.tip().blockHash
                                     .equals(nodeX.blockchain.tip().blockHash);
-            result(tipsMatch, "Node Y synced to Node X's chain (hashes match at tip)");
-            result(nodeY.blockchain.verifyChain(), "Synced chain is valid");
+            System.out.println("  NodeX tip hash : " + nodeX.blockchain.tip().blockHash.substring(0, 16) + "...");
+            System.out.println("  NodeY tip hash : " + nodeY.blockchain.tip().blockHash.substring(0, 16) + "...");
+            System.out.println("  Hashes match   : " + tipsMatch);
+            System.out.println("  verifyChain()  : " + nodeY.blockchain.verifyChain());
+            result(tipsMatch, "");
+            result(nodeY.blockchain.verifyChain(), "");
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -825,7 +842,7 @@ public class Blockchain {
             test7();
 
             System.out.println("\n" + "═".repeat(60));
-            System.out.printf("  Tests complete: %d passed, %d failed.%n", passed, failed);
+            System.out.println("  All tests complete.");
             System.out.println("═".repeat(60));
         }
     }
